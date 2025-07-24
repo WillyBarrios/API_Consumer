@@ -1,7 +1,7 @@
 package org.example;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.anotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -164,4 +164,168 @@ public class Main {
         public ResultadoBusqueda resultadoBusqueda;
         public JsonNode payload;  // Cambiado de String a JsonNode para manejar el JSON completo
     }
+    private static void procesarProceso(Proceso proceso, Contador contador) {
+        // Incrementar contador total
+        contador.total++;
+
+        // Contar estado
+        if ("completo".equals(proceso.estado)) {
+            contador.completos++;
+        } else if ("pendiente".equals(proceso.estado)) {
+            contador.pendientes++;
+        }
+
+        // Contar recursos tipo herramienta
+        if (proceso.recursos != null) {
+            for (Recurso recurso : proceso.recursos) {
+                if ("herramienta".equals(recurso.tipo)) {
+                    contador.herramientas++;
+                }
+            }
+        }
+
+        // Sumar eficiencia
+        if (proceso.metricas != null && proceso.metricas.eficiencia != null) {
+            contador.sumaEficiencia += proceso.metricas.eficiencia;
+            contador.eficienciaCount++;
+        }
+
+        // Verificar si es el más antiguo
+        if (proceso.fechaInicio != null) {
+            LocalDateTime fechaProceso = LocalDateTime.parse(proceso.fechaInicio.substring(0, proceso.fechaInicio.indexOf('.')));
+            if (contador.fechaAntigua == null || fechaProceso.isBefore(contador.fechaAntigua)) {
+                contador.fechaAntigua = fechaProceso;
+                contador.masAntiguo = new ProcesoAntiguo();
+                contador.masAntiguo.id = proceso.id.toString();  // Convertir de Integer a String
+                contador.masAntiguo.nombre = proceso.nombre;
+                contador.masAntiguo.fechaInicio = proceso.fechaInicio;
+            }
+        }
+
+        // Procesar hijos recursivamente
+        if (proceso.hijos != null) {
+            for (Proceso hijo : proceso.hijos) {
+                procesarProceso(hijo, contador);
+            }
+        }
+    }
+    private static Proceso buscarProcesoPorId(List<Proceso> procesos, int idBuscado) {
+        for (Proceso p : procesos) {
+            if (p.id != null && p.id == idBuscado) {
+                return p;
+            }
+            if (p.hijos != null) {
+                Proceso encontrado = buscarProcesoPorId(p.hijos, idBuscado);
+                if (encontrado != null) {
+                    return encontrado;
+                }
+            }
+        }
+        return null;
+    }
+    private static void imprimirPayload(Proceso proceso, String indentacion) {
+        System.out.println(indentacion + "Proceso ID: " + proceso.id);
+        System.out.println(indentacion + "Nombre: " + proceso.nombre);
+        System.out.println(indentacion + "Estado: " + proceso.estado);
+        System.out.println(indentacion + "Fecha de inicio: " + proceso.fechaInicio);
+
+        if (proceso.recursos != null && !proceso.recursos.isEmpty()) {
+            System.out.println(indentacion + "Recursos:");
+            for (Recurso recurso : proceso.recursos) {
+                System.out.println(indentacion + "    • ID: " + recurso.id + " (Tipo: " + recurso.tipo + ")");
+            }
+        }
+
+        if (proceso.metricas != null) {
+            System.out.println(indentacion + "Eficiencia: " + proceso.metricas.eficiencia + "%");
+        }
+
+        if (proceso.hijos != null && !proceso.hijos.isEmpty()) {
+            System.out.println(indentacion + "Procesos hijos:");
+            for (Proceso hijo : proceso.hijos) {
+                imprimirPayload(hijo, indentacion + "    ");
+            }
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        // Consumir API Generadora
+        URL url = new URL("https://58o1y6qyic.execute-api.us-east-1.amazonaws.com/default/taskReport");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+
+        InputStream is = conn.getInputStream();
+
+        // En el método main, después de obtener el InputStream
+
+        Scanner scanner = new Scanner(is).useDelimiter("\\A");
+        String jsonResponse = scanner.hasNext() ? scanner.next() : "";
+        System.out.println("JSON recibido:");
+        System.out.println(jsonResponse);
+
+        // Ahora sí intentamos deserializar
+        RaizProceso raiz = mapper.readValue(jsonResponse, RaizProceso.class);
+
+        // Procesar todos los procesos
+        Contador contador = new Contador();
+        for (Proceso p : raiz.procesos) {
+            procesarProceso(p, contador);
+        }
+
+        // Crear el objeto de solicitud
+        RequestBody requestBody = new RequestBody();
+        requestBody.nombre = "Willy Barrios";
+        requestBody.carnet = "0909164589";
+        requestBody.seccion = "4";
+
+        // Configurar el resultadoBusqueda
+        ResultadoBusqueda busqueda = new ResultadoBusqueda();
+        busqueda.totalProcesos = contador.total;
+        busqueda.procesosCompletos = contador.completos;
+        busqueda.procesosPendientes = contador.pendientes;
+        busqueda.recursosTipoHerramienta = contador.herramientas;
+        busqueda.eficienciaPromedio = contador.eficienciaCount > 0 ?
+                contador.sumaEficiencia / contador.eficienciaCount : 0.0;
+        busqueda.procesoMasAntiguo = contador.masAntiguo;
+        requestBody.resultadoBusqueda = busqueda;
+
+        // Configurar el payload como el proceso más antiguo
+        if (contador.masAntiguo != null) {
+            int idAntiguo = Integer.parseInt(contador.masAntiguo.id);
+            Proceso procesoAntiguoCompleto = buscarProcesoPorId(raiz.procesos, idAntiguo);
+            if (procesoAntiguoCompleto != null) {
+                requestBody.payload = procesoAntiguoCompleto;
+            }
+        }
+
+        // Configuración del POST
+        URL urlPost = new URL("https://t199qr74fg.execute-api.us-east-1.amazonaws.com/default/taskReportVerification");
+        HttpURLConnection connPost = (HttpURLConnection) urlPost.openConnection();
+        connPost.setRequestMethod("POST");
+        connPost.setDoOutput(true);
+        connPost.setRequestProperty("Content-Type", "application/json");
+
+        String jsonBody = mapper.writeValueAsString(requestBody);
+        System.out.println("\nEnviando JSON:");
+        System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(requestBody));
+
+        try (OutputStream os = connPost.getOutputStream()) {
+            byte[] input = jsonBody.getBytes(StandardCharsets.UTF_8);
+            os.write(input, 0, input.length);
+        }
+
+        // Lectura de respuesta
+        int responseCode = connPost.getResponseCode();
+        InputStream responseStream = (responseCode >= 400) ? connPost.getErrorStream() : connPost.getInputStream();
+
+        if (responseStream != null) {
+            Scanner sc = new Scanner(responseStream).useDelimiter("\\A");
+            String response = sc.hasNext() ? sc.next() : "";
+            System.out.println("\nCódigo de respuesta: " + responseCode);
+            System.out.println("Respuesta API Evaluadora: " + response);
+        }
+    }
 }
+
