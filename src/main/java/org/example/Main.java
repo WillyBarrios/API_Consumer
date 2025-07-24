@@ -34,11 +34,105 @@ public class Main {
         @JsonProperty("metadata")
         public Metadata metadata;
     }
-    public class auditor {
+    public class Auditor {
         @JsonProperty("nombre")
         public String nombre;
 
         @JsonProperty("departamento")
         public String departamento;
+    }
+    public class Metadata {
+        @JsonProperty("version")
+        public String version;
+
+        @JsonProperty("entorno")
+        public String entorno;
+    }
+    static class Metadata{
+        @JsonProperty("version")
+        public String version;
+
+        @JsonProperty("entorno")
+        public String entorno;
+    }
+    static class Proceso{
+        @JsonProperty("id")
+        public Integer id;  // Cambiado de String a Integer
+
+        @JsonProperty("nombre")
+        public String nombre;
+
+        @JsonProperty("tipo")
+        public String tipo;
+
+        @JsonProperty("estado")
+        public String estado;
+
+        @JsonProperty("prioridad")
+        public String prioridad;
+
+        @JsonProperty("fechaInicio")
+        public String fechaInicio;
+
+        @JsonProperty("responsable")
+        public String responsable;
+
+        @JsonProperty("childs")
+        public List<Proceso> hijos;
+
+        @JsonProperty("recursos")
+        public List<Recurso> recursos;
+
+        @JsonProperty("metricas")
+        public Metricas metricas;
+    }
+
+    static class Recurso{
+        @JsonProperty("id")
+        public String id;
+
+        @JsonProperty("tipo")
+        public String tipo;
+
+        @JsonProperty("nombre")
+        public String nombre;
+
+        @JsonProperty("url")
+        public String url;
+    }
+    static class Metricas{
+        @JsonProperty("tiempoEjecucion")
+        public Integer tiempoEjecucion;
+
+        @JsonProperty("costo")
+        public Double costo;
+
+        @JsonProperty("eficiencia")
+        public Double eficiencia;
+    }
+    static class ProcesoAntiguo{
+        public String id;
+        public String nombre;
+        public String FechaInicio;
+    }
+
+    static class ResultadoBusqueda{
+        @JsonProperty("totalProcesos")
+        private int totalProcesos;
+
+        @JsonProperty("procesosCompletos")
+        private int procesosCompletos;
+
+        @JsonProperty("procesosPendientes")
+        private int procesosPendientes;
+
+        @JsonProperty("recursosTipoHerramienta")
+        private int recursosTipoHerramienta;
+
+        @JsonProperty("eficienciaPromedio")
+        private double eficienciaPromedio;
+
+        @JsonProperty("procesoMasAntiguo")
+        private ProcesoAntiguo procesoMasAntiguo;
     }
 }
