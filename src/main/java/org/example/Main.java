@@ -41,13 +41,7 @@ public class Main {
         @JsonProperty("departamento")
         public String departamento;
     }
-    public class Metadata {
-        @JsonProperty("version")
-        public String version;
 
-        @JsonProperty("entorno")
-        public String entorno;
-    }
     static class Metadata{
         @JsonProperty("version")
         public String version;
