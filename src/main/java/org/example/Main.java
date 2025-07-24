@@ -1,7 +1,7 @@
 package org.example;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -12,11 +12,11 @@ import java.util.Scanner;
 import com.fasterxml.jackson.databind.JsonNode;
 
 public class Main {
-    static class RaizProceso{
+    static class RaizProceso {
         @JsonProperty("id")
         public String id;
 
-        @JsonProperty ("sistemaOrigen")
+        @JsonProperty("sistemaOrigen")
         public String sistemaOrigen;
 
         @JsonProperty("fechaGeneracion")
@@ -34,7 +34,8 @@ public class Main {
         @JsonProperty("metadata")
         public Metadata metadata;
     }
-    public class Auditor {
+
+    static class Auditor {
         @JsonProperty("nombre")
         public String nombre;
 
@@ -42,14 +43,15 @@ public class Main {
         public String departamento;
     }
 
-    static class Metadata{
+    static class Metadata {
         @JsonProperty("version")
         public String version;
 
         @JsonProperty("entorno")
         public String entorno;
     }
-    static class Proceso{
+
+    static class Proceso {
         @JsonProperty("id")
         public Integer id;  // Cambiado de String a Integer
 
@@ -81,7 +83,7 @@ public class Main {
         public Metricas metricas;
     }
 
-    static class Recurso{
+    static class Recurso {
         @JsonProperty("id")
         public String id;
 
@@ -94,7 +96,8 @@ public class Main {
         @JsonProperty("url")
         public String url;
     }
-    static class Metricas{
+
+    static class Metricas {
         @JsonProperty("tiempoEjecucion")
         public Integer tiempoEjecucion;
 
@@ -104,13 +107,14 @@ public class Main {
         @JsonProperty("eficiencia")
         public Double eficiencia;
     }
-    static class ProcesoAntiguo{
-        public String id;
+
+    static class ProcesoAntiguo {
+        public String id;  // Como String
         public String nombre;
-        public String FechaInicio;
+        public String fechaInicio;
     }
 
-    static class ResultadoBusqueda{
+    static class ResultadoBusqueda {
         @JsonProperty("totalProcesos")
         private int totalProcesos;
 
@@ -129,6 +133,7 @@ public class Main {
         @JsonProperty("procesoMasAntiguo")
         private ProcesoAntiguo procesoMasAntiguo;
     }
+
     static class RequestBody {
         @JsonProperty("nombre")
         private String nombre;
@@ -164,6 +169,7 @@ public class Main {
         public ResultadoBusqueda resultadoBusqueda;
         public JsonNode payload;  // Cambiado de String a JsonNode para manejar el JSON completo
     }
+
     private static void procesarProceso(Proceso proceso, Contador contador) {
         // Incrementar contador total
         contador.total++;
@@ -196,7 +202,7 @@ public class Main {
             if (contador.fechaAntigua == null || fechaProceso.isBefore(contador.fechaAntigua)) {
                 contador.fechaAntigua = fechaProceso;
                 contador.masAntiguo = new ProcesoAntiguo();
-                contador.masAntiguo.id = proceso.id.toString();  // Convertir de Integer a String
+                contador.masAntiguo.id = proceso.id.toString();
                 contador.masAntiguo.nombre = proceso.nombre;
                 contador.masAntiguo.fechaInicio = proceso.fechaInicio;
             }
@@ -223,6 +229,7 @@ public class Main {
         }
         return null;
     }
+
     private static void imprimirPayload(Proceso proceso, String indentacion) {
         System.out.println(indentacion + "Proceso ID: " + proceso.id);
         System.out.println(indentacion + "Nombre: " + proceso.nombre);
@@ -252,20 +259,18 @@ public class Main {
         ObjectMapper mapper = new ObjectMapper();
 
         // Consumir API Generadora
-        URL url = new URL("https://58o1y6qyic.execute-api.us-east-1.amazonaws.com/default/taskReport");
+        URL url = new URL("https://58o1y6qyic.execute-api.us-east-1.amazonaws.com/default/taskReport"); //ENDPOINT
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
 
         InputStream is = conn.getInputStream();
 
-        // En el método main, después de obtener el InputStream
 
         Scanner scanner = new Scanner(is).useDelimiter("\\A");
         String jsonResponse = scanner.hasNext() ? scanner.next() : "";
         System.out.println("JSON recibido:");
         System.out.println(jsonResponse);
 
-        // Ahora sí intentamos deserializar
         RaizProceso raiz = mapper.readValue(jsonResponse, RaizProceso.class);
 
         // Procesar todos los procesos
@@ -328,4 +333,3 @@ public class Main {
         }
     }
 }
-
