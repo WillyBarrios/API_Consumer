@@ -129,4 +129,39 @@ public class Main {
         @JsonProperty("procesoMasAntiguo")
         private ProcesoAntiguo procesoMasAntiguo;
     }
+    static class RequestBody {
+        @JsonProperty("nombre")
+        private String nombre;
+
+        @JsonProperty("carnet")
+        private String carnet;
+
+        @JsonProperty("seccion")
+        private String seccion;
+
+        @JsonProperty("resultadoBusqueda")
+        private ResultadoBusqueda resultadoBusqueda;
+
+        @JsonProperty("payload")
+        private Proceso payload;
+    }
+
+    static class Contador {
+        int total = 0;
+        int completos = 0;
+        int pendientes = 0;
+        int herramientas = 0;
+        double sumaEficiencia = 0;
+        int eficienciaCount = 0;
+        ProcesoAntiguo masAntiguo = null;
+        LocalDateTime fechaAntigua = null;
+    }
+
+    static class RespuestaEvaluacion {
+        public String nombre;
+        public String carnet;
+        public String seccion;
+        public ResultadoBusqueda resultadoBusqueda;
+        public JsonNode payload;  // Cambiado de String a JsonNode para manejar el JSON completo
+    }
 }
